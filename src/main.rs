@@ -13,10 +13,12 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::*;
 use piston::input::*;
 use piston::window::WindowSettings;
+use std::vec::Vec;
+use std::convert::From;
 
 #[derive(Clone, PartialEq)]
 enum Direction {
-    left, right, up, down
+    Left, Right, Up, Down
 }
 
 struct Game { 
@@ -45,22 +47,31 @@ impl Game {
     
     self.snake.direction = match button {
       &Button::Keyboard(Key::Up) 
-        if last_direction != Direction::down => Direction::up,
+        if last_direction != Direction::Down => Direction::Up,
       &Button::Keyboard(Key::Down) 
-        if last_direction != Direction::up => Direction::down,
+        if last_direction != Direction::Up => Direction::Down,
       &Button::Keyboard(Key::Left) 
-        if last_direction != Direction::right => Direction::left,
+        if last_direction != Direction::Right => Direction::Left,
       &Button::Keyboard(Key::Right)  
-        if last_direction != Direction::left => Direction::right,
+        if last_direction != Direction::Left => Direction::Right,
       _ => last_direction
     };
   }
 }
 
+pub struct SnakeBodyElement
+{
+  x: i32,
+  y: i32,
+}
+impl From<(i32, i32)> for SnakeBodyElement {
+  fn from(t: (i32, i32)) -> SnakeBodyElement {
+    SnakeBodyElement { x: t.0, y: t.1}
+  }
+}
 
 struct Snake{
-    x: i32,
-    y: i32,
+    body: Vec<SnakeBodyElement>,
     direction: Direction,
 }
 impl Snake {
@@ -68,10 +79,8 @@ impl Snake {
           let black: [f32; 4] = [0.0, 0.0, 0.0, 1.0]; 
           let snake_block_size: f64 = 10.0;
           let my_square = graphics::rectangle::square(
-            (self.x * snake_block_size as i32) as f64,           
-            (self.y * snake_block_size as i32) as f64, 
-//            (self.x *) as f64,           
-  //          (self.y ) as f64, 
+            (self.body[0].x * snake_block_size as i32) as f64,           
+            (self.body[0].y * snake_block_size as i32) as f64, 
             snake_block_size);
           
           gl.draw(arg.viewport(), |_c, gl| {
@@ -79,25 +88,25 @@ impl Snake {
             
             graphics::rectangle(black, my_square, transform, gl);
             });          
-    }
+    } 
     fn update(&mut self) {
         match self.direction{
-            Direction::left => self.x = self.x - 1,
-            Direction::right => self.x = self.x + 1,
-            Direction::up => self.y = self.y - 1,
-            Direction::down => self.y = self.y + 1,
+            Direction::Left => self.body[0].x = self.body[0].x - 1,
+            Direction::Right => self.body[0].x = self.body[0].x + 1,
+            Direction::Up => self.body[0].y = self.body[0].y - 1,
+            Direction::Down => self.body[0].y = self.body[0].y + 1,
         }
-        if self.x <= 0 { 
-          self.x = 0; 
+        if self.body[0].x <= 0 { 
+          self.body[0].x = 0; 
         }
-        if self.x >= 39 { 
-          self.x = 39; 
+        if self.body[0].x >= 39 { 
+          self.body[0].x = 39; 
         }
-        if self.y <= 0 { 
-          self.y = 0; 
+        if self.body[0].y <= 0 { 
+          self.body[0].y = 0; 
         }
-        if self.y >= 39 { 
-          self.y = 39; 
+        if self.body[0].y >= 39 { 
+          self.body[0].y = 39; 
         }
     }
 }
@@ -120,7 +129,9 @@ fn main() {
 
     let mut game = Game {
         gl: GlGraphics::new(opengl),
-        snake: Snake { x: snake_initial_pos_x, y:snake_initial_pos_y, direction: Direction::down},
+        snake: Snake { 
+            body: vec![(1, 1).into(),(0, 1).into()],
+            direction: Direction::Down}
     };
 
     let mut events = Events::new(EventSettings::new().ups(30));
